@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload to S3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Upload File to S3</h1>
+    <input type="file" id="fileInput" />
+    <button id="uploadButton">Upload</button>
+    <p id="status"></p>
+</div>
+
+<script>
+    document.getElementById('uploadButton').addEventListener('click', async () => {
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+
+        if (!fileInput.files.length) {
+            status.textContent = 'Please select a file to upload.';
+            status.style.color = 'red';
+            return;
+        }
+
+        // 폼 데이터 구성
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        // file 데이터를 보낼 때 사용하는 키 값 => 'file'
+        formData.append('file', file);
+
+        try {
+            // 현재 통신 상태 표현
+            status.textContent = 'Uploading...';
+            // 업로드 진행, post 방식, restapi 호출
+            const response = await fetch('/api/s3/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            // 응답코드 체크
+            if (response.ok) {
+                //응답 결과 획득 json
+                const result = await response.json();  // 통신용 DTO
+                // s3에 업로드 후, 다운로드 할수 있는 url( 퍼블릭 주소)
+                console.log(result.url);
+                status.textContent = `File uploaded successfully! Public URL: ${result.url}`;
+                status.style.color = 'green';
+            } else {
+                throw new Error('Upload failed');
+            }
+        } catch (error) {
+            status.textContent = 'Error uploading file: ' + error.message;
+            status.style.color = 'red';
+        }
+    });
+</script>
+</body>
+</html>
